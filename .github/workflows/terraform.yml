@@ -17,7 +17,7 @@ jobs:
   terraform:
     uses: maison-douce-bakery/platform-ci-workflows/.github/workflows/terraform-static.yml@6fb526a6f532e08a00fc4131ecad00042e83c690 # terraform-static/v1.0.0
     with:
-      directories: dev/ap-southeast-2/network
+      directories: dev/ap-southeast-2/network dev/ap-southeast-2/ecs
 
   # Not on push: pending changes would be reported as drift. The apply job plans itself.
   plan:
@@ -25,7 +25,7 @@ jobs:
     if: github.event_name != 'push'
     uses: maison-douce-bakery/platform-ci-workflows/.github/workflows/terraform-plan.yml@14a60ad81ce2b6807c47ecc032dd9deb6c252161 # terraform-plan/v1.0.0
     with:
-      stacks: '["dev/ap-southeast-2/network"]'
+      stacks: '["dev/ap-southeast-2/network", "dev/ap-southeast-2/ecs"]'
       role_arn: ${{ vars.AWS_CI_PLAN_ROLE_ARN }}
       aws_region: ${{ vars.AWS_REGION }}
       backend_config: backend.hcl
@@ -43,10 +43,12 @@ jobs:
     concurrency:
       group: apply-dev
       cancel-in-progress: false
+    # max-parallel 1 runs the stacks one by one in this order: ecs needs the network first.
     strategy:
       max-parallel: 1
+      fail-fast: true
       matrix:
-        stack: [dev/ap-southeast-2/network]
+        stack: [dev/ap-southeast-2/network, dev/ap-southeast-2/ecs]
     env:
       TF_IN_AUTOMATION: "true"
       TF_INPUT: "false"
