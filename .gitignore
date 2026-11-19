@@ -1,0 +1,30 @@
+# Downloaded providers
+.terraform/
+
+# State can contain plaintext secrets
+*.tfstate
+*.tfstate.*
+
+# Per-machine variable values
+*.tfvars
+*.tfvars.json
+
+# Saved plans contain real resource values
+*.tfplan
+tfplan
+
+# Local overrides
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Crash logs
+crash.log
+crash.*.log
+
+# macOS
+.DS_Store
+
+
+# KEEP .terraform.lock.hcl: it pins provider versions for every machine and CI
