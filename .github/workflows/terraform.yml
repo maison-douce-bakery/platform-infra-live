@@ -1,13 +1,13 @@
 name: terraform
 
-# PRs plan, main applies, Mondays check for drift.
+# PRs plan, main applies. No scheduled drift check: dev is torn down and brought up by hand
+# (teardown.sh / bringup.sh), so a run at a fixed time could hit a torn-down environment.
+# Run it manually to check drift while dev is up.
 on:
   pull_request:
     branches: [main]
   push:
     branches: [main]
-  schedule:
-    - cron: "0 0 * * 1"
   workflow_dispatch:
 
 permissions:
