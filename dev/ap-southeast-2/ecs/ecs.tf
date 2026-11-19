@@ -1,5 +1,5 @@
 module "ecs_cluster" {
-  source = "git::https://github.com/maison-douce-bakery/platform-terraform-modules.git//modules/ecs-cluster?ref=ecs-cluster/v0.1.0"
+  source = "git::https://github.com/maison-douce-bakery/platform-terraform-modules.git//modules/ecs-cluster?ref=ecs-cluster/v0.1.1"
 
   name       = "mdb-dev"
   vpc_id     = data.aws_vpc.this.id
