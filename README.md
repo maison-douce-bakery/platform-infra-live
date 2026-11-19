@@ -1,2 +1,31 @@
 # platform-infra-live
-Live AWS infrastructure per environment, planned on PRs and applied by CI on main.
+
+Live AWS infrastructure, one Terraform state per stack, laid out as `<env>/<region>/<stack>/`.
+
+| Stack | Creates |
+|---|---|
+| `dev/ap-southeast-2/network` | VPC `10.10.0.0/16` from the `vpc` module |
+
+## Making a change
+
+Merging to `main` deploys. Nobody applies from a laptop.
+
+1. Create a branch and edit the stack.
+2. Open a PR. CI runs static checks and a read-only `plan` per stack. Read the plan summary.
+3. Merge with rebase. CI applies on `main` through the `dev` environment, which only `main` can use.
+
+A scheduled plan runs every Monday and fails if live AWS no longer matches `main`.
+
+To plan locally with an admin session:
+
+```bash
+cd dev/ap-southeast-2/network
+terraform init -backend-config=../../../backend.hcl
+terraform plan
+```
+
+## Adding a stack
+
+Create `<env>/<region>/<stack>/` with a `backend.tf` that sets only `key`
+(`platform-infra-live/<env>/<region>/<stack>/terraform.tfstate`). The rest of the backend comes from
+`backend.hcl`. Add the stack to the workflow and its plan check to `platform-github`.
