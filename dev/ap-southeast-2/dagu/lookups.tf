@@ -1,8 +1,4 @@
 # Other stacks are found by name and tag, never by remote state.
-data "aws_caller_identity" "current" {}
-
-data "aws_region" "current" {}
-
 data "aws_vpc" "this" {
   tags = { Name = "mdb-dev-vpc" }
 }
