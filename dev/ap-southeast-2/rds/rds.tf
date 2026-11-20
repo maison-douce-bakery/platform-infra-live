@@ -8,4 +8,7 @@ module "rds" {
 
   # Dev runs single-AZ: an AZ outage pausing dev is acceptable, a standby would double the cost.
   multi_az = false
+
+  # The account's Free plan rejects longer retention (FreeTierRestrictionError). Drop this on a Paid plan.
+  backup_retention_days = 1
 }
