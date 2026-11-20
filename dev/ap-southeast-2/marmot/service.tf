@@ -20,6 +20,9 @@ module "service" {
     MARMOT_DATABASE_NAME    = "marmot"
     MARMOT_DATABASE_USER    = "marmot"
     MARMOT_DATABASE_SSLMODE = "require"
+
+    # On by default upstream; no data leaves the company without review.
+    MARMOT_TELEMETRY_ENABLED = "false"
   }
 
   secrets = {
