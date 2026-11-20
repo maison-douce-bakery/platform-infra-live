@@ -25,6 +25,11 @@ data "aws_security_group" "rds" {
   vpc_id = data.aws_vpc.this.id
 }
 
+data "aws_security_group" "ecs_instance" {
+  name   = "mdb-dev-ecs-instance"
+  vpc_id = data.aws_vpc.this.id
+}
+
 data "aws_ecs_cluster" "this" {
   cluster_name = "mdb-dev"
 }

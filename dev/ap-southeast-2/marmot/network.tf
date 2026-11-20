@@ -24,3 +24,12 @@ resource "aws_vpc_security_group_ingress_rule" "rds_from_db_init" {
   to_port                      = 5432
   description                  = "${local.name} db-init"
 }
+
+resource "aws_vpc_security_group_ingress_rule" "rds_from_service" {
+  security_group_id            = data.aws_security_group.rds.id
+  referenced_security_group_id = module.service.security_group_id
+  ip_protocol                  = "tcp"
+  from_port                    = 5432
+  to_port                      = 5432
+  description                  = local.name
+}
