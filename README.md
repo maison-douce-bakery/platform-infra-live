@@ -6,7 +6,7 @@ Live AWS infrastructure, one Terraform state per stack, laid out as `<env>/<regi
 |---|---|
 | `dev/ap-southeast-2/network` | VPC `10.10.0.0/16` from the `vpc` module: public, private and database subnets, one NAT gateway |
 | `dev/ap-southeast-2/rds` | PostgreSQL 18 `mdb-dev` (`db.t4g.micro`, single-AZ) in the database subnets, from the `rds-postgres` module |
-| `dev/ap-southeast-2/ecs` | ECS cluster `mdb-dev` with one `t4g.micro` instance in the private subnets, from the `ecs-cluster` module |
+| `dev/ap-southeast-2/ecs` | ECS cluster `mdb-dev` with 0-2 `t4g.small` instances scaled by a capacity provider, in the private subnets, from the `ecs-cluster` module |
 
 ## Making a change
 
