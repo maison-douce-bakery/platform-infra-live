@@ -4,7 +4,7 @@ Live AWS infrastructure, one Terraform state per stack, laid out as `<env>/<regi
 
 | Stack | Creates |
 |---|---|
-| `dev/ap-southeast-2/network` | VPC `10.10.0.0/16` from the `vpc` module: public and private subnets, one NAT gateway |
+| `dev/ap-southeast-2/network` | VPC `10.10.0.0/16` from the `vpc` module: public, private and database subnets, one NAT gateway |
 | `dev/ap-southeast-2/ecs` | ECS cluster `mdb-dev` with one `t4g.micro` instance in the private subnets, from the `ecs-cluster` module |
 
 ## Making a change
