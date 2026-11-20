@@ -28,3 +28,6 @@ crash.*.log
 
 
 # KEEP .terraform.lock.hcl: it pins provider versions for every machine and CI
+
+# Local credentials, never published
+.env
