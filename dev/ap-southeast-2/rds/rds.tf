@@ -1,5 +1,5 @@
 module "rds" {
-  source = "git::https://github.com/maison-douce-bakery/platform-terraform-modules.git//modules/rds-postgres?ref=rds-postgres/v0.1.0"
+  source = "git::https://github.com/maison-douce-bakery/platform-terraform-modules.git//modules/rds-postgres?ref=rds-postgres/v0.1.1"
 
   name           = "mdb-dev"
   vpc_id         = data.aws_vpc.this.id
