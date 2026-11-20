@@ -2,9 +2,9 @@ locals {
   name              = "mdb-dev-commerce"
   capacity_provider = "mdb-dev-ec2"
 
-  # The application owns this database and creates its own schema on first start.
-  database = "bakery"
-  db_role  = "commerce"
+  # The role owns database `bakery`, whose name db-init.sh holds, and the application creates its
+  # own schema inside it on first start.
+  db_role = "commerce"
 
   # Bump to rotate. The next apply writes a new password and reruns db-init.
   db_password_version = 1
