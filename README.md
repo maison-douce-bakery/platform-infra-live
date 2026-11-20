@@ -8,6 +8,7 @@ Live AWS infrastructure, one Terraform state per stack, laid out as `<env>/<regi
 | `dev/ap-southeast-2/rds` | PostgreSQL 18 `mdb-dev` (`db.t4g.micro`, single-AZ) in the database subnets, from the `rds-postgres` module |
 | `dev/ap-southeast-2/ecs` | ECS cluster `mdb-dev` with 0-2 `t4g.small` instances scaled by a capacity provider, in the private subnets, from the `ecs-cluster` module |
 | `dev/ap-southeast-2/marmot` | Marmot data catalog on the ECS cluster, from the `ecs-service` module: KMS key and secrets, a `db-init` task that creates its PostgreSQL role and database on `mdb-dev`, and the service |
+| `dev/ap-southeast-2/dagu` | Dagu workflow scheduler on the ECS cluster, its state on an encrypted EFS file system with daily backups, from the `ecs-service` module |
 
 ## Making a change
 
