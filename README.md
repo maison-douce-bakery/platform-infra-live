@@ -7,6 +7,7 @@ Live AWS infrastructure, one Terraform state per stack, laid out as `<env>/<regi
 | `prod/ap-southeast-2/network` | VPC `10.10.0.0/16` from the `vpc` module: public, private and database subnets, no NAT gateway |
 | `prod/ap-southeast-2/rds` | PostgreSQL 18 `mdb-prod` (`db.t4g.micro`, single-AZ) in the database subnets, from the `rds-postgres` module |
 | `prod/ap-southeast-2/ecs` | Fargate ECS cluster `mdb-prod` with the FARGATE and FARGATE_SPOT capacity providers, from the `ecs-cluster` module |
+| `prod/ap-southeast-2/data-platform` | Dagu 2.27.0 as a Fargate task (public subnet, no inbound, ECS Exec) with its state on an encrypted, backed-up EFS file system, from the `ecs-service` module |
 | `prod/ap-southeast-2/commerce` | Database `bakery` and role `commerce` on `mdb-prod` for the `commerce-api` application, its login in Secrets Manager, created by a `db-init` task |
 
 ## Making a change
