@@ -1,8 +1,8 @@
 name: terraform
 
-# PRs plan, main applies. No scheduled drift check: dev is torn down and brought up by hand
+# PRs plan, main applies. No scheduled drift check: prod is torn down and brought up by hand
 # (teardown.sh / bringup.sh), so a run at a fixed time could hit a torn-down environment.
-# Run it manually to check drift while dev is up.
+# Run it manually to check drift while prod is up.
 on:
   pull_request:
     branches: [main]
@@ -17,7 +17,7 @@ jobs:
   terraform:
     uses: maison-douce-bakery/platform-ci-workflows/.github/workflows/terraform-static.yml@6fb526a6f532e08a00fc4131ecad00042e83c690 # terraform-static/v1.0.0
     with:
-      directories: dev/ap-southeast-2/network dev/ap-southeast-2/rds dev/ap-southeast-2/ecs dev/ap-southeast-2/marmot dev/ap-southeast-2/dagu dev/ap-southeast-2/commerce
+      directories: prod/ap-southeast-2/network prod/ap-southeast-2/rds prod/ap-southeast-2/ecs prod/ap-southeast-2/commerce
 
   # Not on push: pending changes would be reported as drift. The apply job plans itself.
   plan:
@@ -25,7 +25,7 @@ jobs:
     if: github.event_name != 'push'
     uses: maison-douce-bakery/platform-ci-workflows/.github/workflows/terraform-plan.yml@14a60ad81ce2b6807c47ecc032dd9deb6c252161 # terraform-plan/v1.0.0
     with:
-      stacks: '["dev/ap-southeast-2/network", "dev/ap-southeast-2/rds", "dev/ap-southeast-2/ecs", "dev/ap-southeast-2/marmot", "dev/ap-southeast-2/dagu", "dev/ap-southeast-2/commerce"]'
+      stacks: '["prod/ap-southeast-2/network", "prod/ap-southeast-2/rds", "prod/ap-southeast-2/ecs", "prod/ap-southeast-2/commerce"]'
       role_arn: ${{ vars.AWS_CI_PLAN_ROLE_ARN }}
       aws_region: ${{ vars.AWS_REGION }}
       backend_config: backend.hcl
@@ -39,16 +39,16 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
     timeout-minutes: 45
-    environment: dev
+    environment: prod
     concurrency:
-      group: apply-dev
+      group: apply-prod
       cancel-in-progress: false
     # max-parallel 1 runs the stacks one by one in this order: each needs the network first.
     strategy:
       max-parallel: 1
       fail-fast: true
       matrix:
-        stack: [dev/ap-southeast-2/network, dev/ap-southeast-2/rds, dev/ap-southeast-2/ecs, dev/ap-southeast-2/marmot, dev/ap-southeast-2/dagu, dev/ap-southeast-2/commerce]
+        stack: [prod/ap-southeast-2/network, prod/ap-southeast-2/rds, prod/ap-southeast-2/ecs, prod/ap-southeast-2/commerce]
     env:
       TF_IN_AUTOMATION: "true"
       TF_INPUT: "false"

@@ -4,12 +4,10 @@ Live AWS infrastructure, one Terraform state per stack, laid out as `<env>/<regi
 
 | Stack | Creates |
 |---|---|
-| `dev/ap-southeast-2/network` | VPC `10.10.0.0/16` from the `vpc` module: public, private and database subnets, one NAT gateway |
-| `dev/ap-southeast-2/rds` | PostgreSQL 18 `mdb-dev` (`db.t4g.micro`, single-AZ) in the database subnets, from the `rds-postgres` module |
-| `dev/ap-southeast-2/ecs` | ECS cluster `mdb-dev` with 0-2 `t4g.small` instances scaled by a capacity provider, in the private subnets, from the `ecs-cluster` module |
-| `dev/ap-southeast-2/marmot` | Marmot data catalog on the ECS cluster, from the `ecs-service` module: KMS key and secrets, a `db-init` task that creates its PostgreSQL role and database on `mdb-dev`, and the service |
-| `dev/ap-southeast-2/dagu` | Dagu workflow scheduler on the ECS cluster, its state on an encrypted EFS file system with daily backups, from the `ecs-service` module |
-| `dev/ap-southeast-2/commerce` | Database `bakery` and role `commerce` on `mdb-dev` for the `commerce-api` application, its login in Secrets Manager, created by a `db-init` task |
+| `prod/ap-southeast-2/network` | VPC `10.10.0.0/16` from the `vpc` module: public, private and database subnets, no NAT gateway |
+| `prod/ap-southeast-2/rds` | PostgreSQL 18 `mdb-prod` (`db.t4g.micro`, single-AZ) in the database subnets, from the `rds-postgres` module |
+| `prod/ap-southeast-2/ecs` | Fargate ECS cluster `mdb-prod` with the FARGATE and FARGATE_SPOT capacity providers, from the `ecs-cluster` module |
+| `prod/ap-southeast-2/commerce` | Database `bakery` and role `commerce` on `mdb-prod` for the `commerce-api` application, its login in Secrets Manager, created by a `db-init` task |
 
 ## Making a change
 
@@ -17,14 +15,14 @@ Merging to `main` deploys. Nobody applies from a laptop.
 
 1. Create a branch and edit the stack.
 2. Open a PR. CI runs static checks and a read-only `plan` per stack. Read the plan summary.
-3. Merge with rebase. CI applies on `main` through the `dev` environment, which only `main` can use.
+3. Merge with rebase. CI applies on `main` through the `prod` environment, which only `main` can use.
 
-To check for drift while dev is up, run the workflow manually: the plan fails if live AWS no longer matches `main`.
+To check for drift while prod is up, run the workflow manually: the plan fails if live AWS no longer matches `main`.
 
 To plan locally with an admin session:
 
 ```bash
-cd dev/ap-southeast-2/network
+cd prod/ap-southeast-2/network
 terraform init -backend-config=../../../backend.hcl
 terraform plan
 ```
