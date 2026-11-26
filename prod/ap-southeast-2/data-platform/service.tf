@@ -1,5 +1,5 @@
 module "service" {
-  source = "git::https://github.com/maison-douce-bakery/platform-terraform-modules.git//modules/ecs-service?ref=ecs-service/v0.4.0"
+  source = "git::https://github.com/maison-douce-bakery/platform-terraform-modules.git//modules/ecs-service?ref=ecs-service/v0.5.0"
 
   name                   = local.name
   cluster_name           = data.aws_ecs_cluster.this.cluster_name
@@ -25,6 +25,28 @@ module "service" {
     DAGU_HOST = "0.0.0.0"
     DAGU_PORT = "8080"
     TZ        = "Asia/Ho_Chi_Minh"
+
+    DAGU_SKIP_EXAMPLES = "true"
+
+    # Pull-only Git Sync, like Airflow's git-sync: the repository is the source of the DAGs.
+    DAGU_GITSYNC_ENABLED           = "true"
+    DAGU_GITSYNC_REPOSITORY        = "https://github.com/maison-douce-bakery/data-orchestration.git"
+    DAGU_GITSYNC_BRANCH            = "main"
+    DAGU_GITSYNC_PATH              = "dags"
+    DAGU_GITSYNC_PUSH_ENABLED      = "false"
+    DAGU_GITSYNC_AUTOSYNC_ENABLED  = "true"
+    DAGU_GITSYNC_AUTOSYNC_INTERVAL = "60"
+
+    DBT_HOST   = data.aws_db_instance.this.address
+    DBT_PORT   = tostring(data.aws_db_instance.this.port)
+    DBT_USER   = local.dbt_role
+    DBT_DBNAME = "bakery"
+  }
+
+  ssm_secrets = {
+    DBT_PASSWORD = local.dbt_password_arn
+    # Created by hand with the CLI, so no value reaches Terraform state; it survives teardown.
+    DAGU_GITSYNC_AUTH_TOKEN = local.gitsync_token_arn
   }
 
   efs_volumes = {
@@ -45,4 +67,15 @@ module "service" {
 
   # The NFS rule needs the module's security group, so it can't be listed here; it's created long before a task is up.
   depends_on = [aws_efs_mount_target.this]
+}
+
+# Lets Dagu connect to RDS as dbt. Can't be in the module's `depends_on`: it needs the module's
+# security group, which would be a cycle.
+resource "aws_vpc_security_group_ingress_rule" "rds_from_service" {
+  security_group_id            = data.aws_security_group.rds.id
+  referenced_security_group_id = module.service.security_group_id
+  ip_protocol                  = "tcp"
+  from_port                    = 5432
+  to_port                      = 5432
+  description                  = local.name
 }
