@@ -17,7 +17,7 @@ jobs:
   terraform:
     uses: maison-douce-bakery/platform-ci-workflows/.github/workflows/terraform-static.yml@6fb526a6f532e08a00fc4131ecad00042e83c690 # terraform-static/v1.0.0
     with:
-      directories: prod/ap-southeast-2/network prod/ap-southeast-2/rds prod/ap-southeast-2/ecs prod/ap-southeast-2/commerce prod/ap-southeast-2/data-platform
+      directories: prod/ap-southeast-2/network prod/ap-southeast-2/rds prod/ap-southeast-2/ecs prod/ap-southeast-2/commerce prod/ap-southeast-2/datalake prod/ap-southeast-2/data-platform
 
   # Not on push: pending changes would be reported as drift. The apply job plans itself.
   plan:
@@ -25,7 +25,7 @@ jobs:
     if: github.event_name != 'push'
     uses: maison-douce-bakery/platform-ci-workflows/.github/workflows/terraform-plan.yml@14a60ad81ce2b6807c47ecc032dd9deb6c252161 # terraform-plan/v1.0.0
     with:
-      stacks: '["prod/ap-southeast-2/network", "prod/ap-southeast-2/rds", "prod/ap-southeast-2/ecs", "prod/ap-southeast-2/commerce", "prod/ap-southeast-2/data-platform"]'
+      stacks: '["prod/ap-southeast-2/network", "prod/ap-southeast-2/rds", "prod/ap-southeast-2/ecs", "prod/ap-southeast-2/commerce", "prod/ap-southeast-2/datalake", "prod/ap-southeast-2/data-platform"]'
       role_arn: ${{ vars.AWS_CI_PLAN_ROLE_ARN }}
       aws_region: ${{ vars.AWS_REGION }}
       backend_config: backend.hcl
@@ -48,7 +48,7 @@ jobs:
       max-parallel: 1
       fail-fast: true
       matrix:
-        stack: [prod/ap-southeast-2/network, prod/ap-southeast-2/rds, prod/ap-southeast-2/ecs, prod/ap-southeast-2/commerce, prod/ap-southeast-2/data-platform]
+        stack: [prod/ap-southeast-2/network, prod/ap-southeast-2/rds, prod/ap-southeast-2/ecs, prod/ap-southeast-2/commerce, prod/ap-southeast-2/datalake, prod/ap-southeast-2/data-platform]
     env:
       TF_IN_AUTOMATION: "true"
       TF_INPUT: "false"
