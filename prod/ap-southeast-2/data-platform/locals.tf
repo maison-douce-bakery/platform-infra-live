@@ -7,7 +7,7 @@ locals {
 
   dagu_image = "452258152479.dkr.ecr.ap-southeast-2.amazonaws.com/mdb/dagu-dbt@sha256:81ec1df1241e99dc68ea32b1c3b2ba07621ed21e0b78841fa6e33c2bc4e44044"
 
-  # The role owns the schemas staging, intermediate and marts and can only read the application's schema.
+  # The role owns the schemas staging, intermediate, marts and snapshots and can only read the application's schema.
   dbt_role = "dbt"
 
   # Bump after changing the dbt-password parameter to rerun db-init.
