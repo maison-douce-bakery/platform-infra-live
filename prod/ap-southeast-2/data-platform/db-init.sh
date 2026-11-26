@@ -10,6 +10,8 @@ GRANT dbt TO CURRENT_USER WITH SET TRUE;
 -- The master reaches database bakery, and acts for commerce in it, through membership of commerce.
 GRANT commerce TO CURRENT_USER WITH SET TRUE;
 GRANT CONNECT ON DATABASE bakery TO dbt;
+-- The commerce stack revokes the default TEMP right from PUBLIC; dbt snapshots need temporary tables.
+GRANT TEMPORARY ON DATABASE bakery TO dbt;
 SQL
 
 # The application creates its schema when it starts, which can be after this task.
@@ -26,6 +28,7 @@ psql -X -q -v ON_ERROR_STOP=1 <<'SQL'
 CREATE SCHEMA IF NOT EXISTS staging AUTHORIZATION dbt;
 CREATE SCHEMA IF NOT EXISTS intermediate AUTHORIZATION dbt;
 CREATE SCHEMA IF NOT EXISTS marts AUTHORIZATION dbt;
+CREATE SCHEMA IF NOT EXISTS snapshots AUTHORIZATION dbt;
 -- Read-only on the application's schema, now and for tables added later.
 SET ROLE commerce;
 GRANT USAGE ON SCHEMA bakery TO dbt;
