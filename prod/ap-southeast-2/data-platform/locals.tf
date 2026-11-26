@@ -15,9 +15,20 @@ locals {
 
   ssm_prefix = "/mdb/prod/data-platform"
 
+  # The role owns the schema raw, where the loader writes, and nothing else.
+  dp_loader_role = "dp_loader"
+
+  # Bump after changing the dp-loader-password parameter to rerun db-init.
+  dp_loader_password_version = 1
+
   # Created by hand with the CLI, survives teardown, never read by Terraform.
-  dbt_password_arn  = "arn:aws:ssm:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:parameter${local.ssm_prefix}/dbt-password"
-  gitsync_token_arn = "arn:aws:ssm:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:parameter${local.ssm_prefix}/gitsync-token"
+  dbt_password_arn       = "arn:aws:ssm:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:parameter${local.ssm_prefix}/dbt-password"
+  dp_loader_password_arn = "arn:aws:ssm:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:parameter${local.ssm_prefix}/dp-loader-password"
+  gitsync_token_arn      = "arn:aws:ssm:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:parameter${local.ssm_prefix}/gitsync-token"
+
+  # The bucket comes from the datalake stack; the function is deployed by its own repo.
+  datalake_bucket_name = "mdb-prod-datalake-${data.aws_caller_identity.current.account_id}-${data.aws_region.current.region}"
+  ingest_function_name = "mdb-prod-ingest-open-meteo"
 
   # ECR Public mirror of the Docker official image, same digest (18.7-alpine).
   psql_image = "public.ecr.aws/docker/library/postgres:18.7-alpine@sha256:ff64c9e3bdf8e2120107d3559de8db314e8305f7e38c5105903c6295876738ff"

@@ -42,12 +42,20 @@ module "service" {
     DBT_USER   = local.dbt_role
     DBT_DBNAME = "bakery"
 
-    # Dagu hands steps only DAGU_*, DAG_*, LC_* and a short allowlist; this lets the DBT_* connection env reach dbt.
-    DAGU_ENV_PASSTHROUGH_PREFIXES = "DBT_"
+    DP_LOADER_HOST   = data.aws_db_instance.this.address
+    DP_LOADER_PORT   = tostring(data.aws_db_instance.this.port)
+    DP_LOADER_USER   = local.dp_loader_role
+    DP_LOADER_DBNAME = "bakery"
+
+    DATALAKE_BUCKET = data.aws_s3_bucket.datalake.id
+
+    # Dagu hands steps only DAGU_*, DAG_*, LC_* and a short allowlist; this lets the DBT_*, DP_* and DATALAKE_* env reach the steps.
+    DAGU_ENV_PASSTHROUGH_PREFIXES = "DBT_,DP_,DATALAKE_"
   }
 
   ssm_secrets = {
-    DBT_PASSWORD = local.dbt_password_arn
+    DBT_PASSWORD       = local.dbt_password_arn
+    DP_LOADER_PASSWORD = local.dp_loader_password_arn
     # Created by hand with the CLI, so no value reaches Terraform state; it survives teardown.
     DAGU_GITSYNC_AUTH_TOKEN = local.gitsync_token_arn
   }
@@ -67,6 +75,30 @@ module "service" {
   deployment_maximum_percent         = 100
 
   permissions_boundary_arn = data.aws_iam_policy.boundary.arn
+
+  # Steps invoke the ingest Lambda and read its raw files; Dagu can't write to the bucket.
+  # s3fs lists the folder itself ("raw/open_meteo") and its content ("raw/open_meteo/..."), never the bucket root.
+  task_role_policy_json = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect   = "Allow"
+        Action   = "lambda:InvokeFunction"
+        Resource = "arn:aws:lambda:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:function:${local.ingest_function_name}"
+      },
+      {
+        # Not limited by s3:prefix: s3fs also calls HeadBucket, which carries no prefix. Objects stay limited to raw/open_meteo/.
+        Effect   = "Allow"
+        Action   = "s3:ListBucket"
+        Resource = data.aws_s3_bucket.datalake.arn
+      },
+      {
+        Effect   = "Allow"
+        Action   = "s3:GetObject"
+        Resource = "${data.aws_s3_bucket.datalake.arn}/raw/open_meteo/*"
+      },
+    ]
+  })
 
   # The NFS rule needs the module's security group, so it can't be listed here; it's created long before a task is up.
   depends_on = [aws_efs_mount_target.this]

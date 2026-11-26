@@ -1,5 +1,5 @@
-# One-off task that creates the role dbt, its schemas and its read access to the application's schema
-# with the RDS master login.
+# One-off task that creates the roles dbt and dp_loader, their schemas and dbt's read access to the application's
+# schema and to raw with the RDS master login.
 resource "aws_cloudwatch_log_group" "db_init" {
   name              = "/ecs/${local.name}-db-init"
   retention_in_days = 30
@@ -36,7 +36,7 @@ resource "aws_iam_role_policy" "db_init_secrets" {
       {
         Effect   = "Allow"
         Action   = "ssm:GetParameters"
-        Resource = local.dbt_password_arn
+        Resource = [local.dbt_password_arn, local.dp_loader_password_arn]
       },
     ]
   })
@@ -67,6 +67,7 @@ resource "aws_ecs_task_definition" "db_init" {
       { name = "PGUSER", valueFrom = "${data.aws_db_instance.this.master_user_secret[0].secret_arn}:username::" },
       { name = "PGPASSWORD", valueFrom = "${data.aws_db_instance.this.master_user_secret[0].secret_arn}:password::" },
       { name = "DBT_PASSWORD", valueFrom = local.dbt_password_arn },
+      { name = "DP_LOADER_PASSWORD", valueFrom = local.dp_loader_password_arn },
     ]
     logConfiguration = {
       logDriver = "awslogs"
@@ -90,6 +91,7 @@ resource "terraform_data" "db_init" {
     aws_ecs_task_definition.db_init.arn,
     data.aws_db_instance.this.resource_id,
     local.dbt_password_version,
+    local.dp_loader_password_version,
   ]
 
   provisioner "local-exec" {

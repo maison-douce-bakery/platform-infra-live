@@ -5,6 +5,10 @@ psql -X -q -v ON_ERROR_STOP=1 <<'SQL'
 \getenv pw DBT_PASSWORD
 SELECT 'CREATE ROLE dbt LOGIN' WHERE NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'dbt')\gexec
 SELECT format('ALTER ROLE dbt WITH LOGIN PASSWORD %L', :'pw')\gexec
+\getenv lpw DP_LOADER_PASSWORD
+SELECT 'CREATE ROLE dp_loader LOGIN' WHERE NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'dp_loader')\gexec
+SELECT format('ALTER ROLE dp_loader WITH LOGIN PASSWORD %L', :'lpw')\gexec
+GRANT dp_loader TO CURRENT_USER WITH SET TRUE;
 -- PostgreSQL 16+: the creator may only make dbt a schema owner after taking SET on it.
 GRANT dbt TO CURRENT_USER WITH SET TRUE;
 -- The master reaches database bakery, and acts for commerce in it, through membership of commerce.
@@ -12,6 +16,8 @@ GRANT commerce TO CURRENT_USER WITH SET TRUE;
 GRANT CONNECT ON DATABASE bakery TO dbt;
 -- The commerce stack revokes the default TEMP right from PUBLIC; dbt snapshots need temporary tables.
 GRANT TEMPORARY ON DATABASE bakery TO dbt;
+-- dp_loader gets no other right on the database and none on schema bakery.
+GRANT CONNECT, TEMPORARY ON DATABASE bakery TO dp_loader;
 SQL
 
 # The application creates its schema when it starts, which can be after this task.
@@ -35,5 +41,12 @@ GRANT USAGE ON SCHEMA bakery TO dbt;
 GRANT SELECT ON ALL TABLES IN SCHEMA bakery TO dbt;
 ALTER DEFAULT PRIVILEGES FOR ROLE commerce IN SCHEMA bakery GRANT SELECT ON TABLES TO dbt;
 RESET ROLE;
+-- The loader owns schema raw; dbt reads it, now and for tables added later.
+CREATE SCHEMA IF NOT EXISTS raw AUTHORIZATION dp_loader;
+SET ROLE dp_loader;
+GRANT USAGE ON SCHEMA raw TO dbt;
+GRANT SELECT ON ALL TABLES IN SCHEMA raw TO dbt;
+ALTER DEFAULT PRIVILEGES FOR ROLE dp_loader IN SCHEMA raw GRANT SELECT ON TABLES TO dbt;
+RESET ROLE;
 SQL
-echo "role dbt, its schemas and its read access to schema bakery are ready"
+echo "roles dbt and dp_loader, their schemas and dbt's read access to schemas bakery and raw are ready"
