@@ -20,3 +20,16 @@ data "aws_iam_policy" "boundary" {
   name        = "mdb-shared-workload-boundary"
   path_prefix = "/platform/"
 }
+
+data "aws_caller_identity" "current" {}
+
+data "aws_region" "current" {}
+
+data "aws_db_instance" "this" {
+  db_instance_identifier = "mdb-prod"
+}
+
+data "aws_security_group" "rds" {
+  name   = "mdb-prod-rds"
+  vpc_id = data.aws_vpc.this.id
+}
