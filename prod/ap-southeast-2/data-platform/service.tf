@@ -41,6 +41,9 @@ module "service" {
     DBT_PORT   = tostring(data.aws_db_instance.this.port)
     DBT_USER   = local.dbt_role
     DBT_DBNAME = "bakery"
+
+    # Dagu hands steps only DAGU_*, DAG_*, LC_* and a short allowlist; this lets the DBT_* connection env reach dbt.
+    DAGU_ENV_PASSTHROUGH_PREFIXES = "DBT_"
   }
 
   ssm_secrets = {
