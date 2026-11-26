@@ -33,3 +33,7 @@ data "aws_security_group" "rds" {
   name   = "mdb-prod-rds"
   vpc_id = data.aws_vpc.this.id
 }
+
+data "aws_s3_bucket" "datalake" {
+  bucket = local.datalake_bucket_name
+}

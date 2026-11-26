@@ -9,7 +9,7 @@ Live AWS infrastructure, one Terraform state per stack, laid out as `<env>/<regi
 | `prod/ap-southeast-2/ecs` | Fargate ECS cluster `mdb-prod` with the FARGATE and FARGATE_SPOT capacity providers, from the `ecs-cluster` module |
 | `prod/ap-southeast-2/commerce` | Database `bakery` and role `commerce` on `mdb-prod` for the `commerce-api` application, its login in Secrets Manager, created by a `db-init` task |
 | `prod/ap-southeast-2/datalake` | S3 bucket `mdb-prod-datalake-<account>-<region>` for raw data: versioned, encrypted, private, never destroyed by Terraform |
-| `prod/ap-southeast-2/data-platform` | Dagu as a Fargate task (public subnet, no inbound, ECS Exec) with its state on an encrypted, backed-up EFS file system, from the `ecs-service` module. DAGs come from `data-orchestration` through Git Sync; the `dbt` database user is created here, its password lives in SSM Parameter Store (set by hand). Needs the database `bakery` |
+| `prod/ap-southeast-2/data-platform` | Dagu as a Fargate task (public subnet, no inbound, ECS Exec) with its state on an encrypted, backed-up EFS file system, from the `ecs-service` module. DAGs come from `data-orchestration` through Git Sync; the `dbt` and `dp_loader` database users and schema `raw` are created here, their passwords live in SSM Parameter Store (set by hand). The task role can invoke the ingest Lambda and read `raw/open_meteo/` in the datalake bucket. Needs the database `bakery` and the `datalake` stack |
 
 ## Making a change
 
