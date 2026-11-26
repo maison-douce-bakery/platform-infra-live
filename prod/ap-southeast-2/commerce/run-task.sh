@@ -5,10 +5,28 @@ set -euo pipefail
 
 ecs() { aws ecs --region "$REGION" "$@"; }
 
-task=$(ecs run-task --cluster "$CLUSTER" --task-definition "$TASK_DEFINITION" \
-  --capacity-provider-strategy "capacityProvider=$CAPACITY_PROVIDER,weight=1" \
-  --network-configuration "awsvpcConfiguration={subnets=[$SUBNETS],securityGroups=[$SECURITY_GROUP],assignPublicIp=ENABLED}" \
-  --started-by terraform --query 'tasks[0].taskArn' --output text)
+# A role Terraform just created can be unusable for a few seconds (IAM is eventually consistent), so retry only that error.
+attempts=6
+for i in $(seq 1 "$attempts"); do
+  if out=$(ecs run-task --cluster "$CLUSTER" --task-definition "$TASK_DEFINITION" \
+    --capacity-provider-strategy "capacityProvider=$CAPACITY_PROVIDER,weight=1" \
+    --network-configuration "awsvpcConfiguration={subnets=[$SUBNETS],securityGroups=[$SECURITY_GROUP],assignPublicIp=ENABLED}" \
+    --started-by terraform --query 'tasks[0].taskArn' --output text 2>&1); then
+    task=$out
+    break
+  fi
+  case "$out" in
+    *"unable to assume the role"*) ;;
+    *) echo "$out" >&2; exit 1 ;;
+  esac
+  if [ "$i" -eq "$attempts" ]; then
+    echo "$out" >&2
+    echo "role still not usable after $attempts attempts" >&2
+    exit 1
+  fi
+  echo "role not usable yet, retrying ($((i + 1))/$attempts)"
+  sleep "${RETRY_SLEEP:-10}"
+done
 [ "$task" != "None" ] || { echo "run-task started no task" >&2; exit 1; }
 echo "started $task"
 
