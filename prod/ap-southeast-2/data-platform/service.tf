@@ -49,8 +49,8 @@ module "service" {
 
     DATALAKE_BUCKET = data.aws_s3_bucket.datalake.id
 
-    # Dagu hands steps only DAGU_*, DAG_*, LC_* and a short allowlist; this lets the DBT_*, DP_* and DATALAKE_* env reach the steps.
-    DAGU_ENV_PASSTHROUGH_PREFIXES = "DBT_,DP_,DATALAKE_"
+    # Dagu hands steps only DAGU_*, DAG_*, LC_* and a short allowlist; this lets the DBT_*, DP_*, DATALAKE_* and AWS_* (task role credentials) env reach the steps.
+    DAGU_ENV_PASSTHROUGH_PREFIXES = "DBT_,DP_,DATALAKE_,AWS_"
   }
 
   ssm_secrets = {
