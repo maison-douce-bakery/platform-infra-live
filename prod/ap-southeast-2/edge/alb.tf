@@ -42,7 +42,7 @@ resource "aws_lb" "this" {
   security_groups            = [aws_security_group.alb.id]
   drop_invalid_header_fields = true
 
-  # teardown.sh switches this off through the API before it destroys the stack.
+  # Deletion protection stays on; switch it off before destroying the stack.
   enable_deletion_protection = true
 }
 
