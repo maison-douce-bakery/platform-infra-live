@@ -21,9 +21,6 @@ locals {
   # Bump after changing the dp-loader-password parameter to rerun db-init.
   dp_loader_password_version = 1
 
-  # The role owns database marmot, used by the Marmot catalog, and nothing else.
-  marmot_role = "marmot"
-
   # Bump after changing the marmot db-password parameter to rerun db-init.
   marmot_password_version = 1
 
