@@ -53,13 +53,22 @@ module "service" {
 
     DATALAKE_BUCKET = data.aws_s3_bucket.datalake.id
 
-    # Dagu hands steps only DAGU_*, DAG_*, LC_* and a short allowlist; this lets the DBT_*, DP_*, DATALAKE_* and AWS_* (task role credentials) env reach the steps.
-    DAGU_ENV_PASSTHROUGH_PREFIXES = "DBT_,DP_,DATALAKE_,AWS_"
+    MARMOT_URL             = "https://marmot.datawithme.qd.je"
+    MARMOT_SOURCE_HOST     = data.aws_db_instance.this.address
+    MARMOT_SOURCE_PORT     = tostring(data.aws_db_instance.this.port)
+    MARMOT_SOURCE_DATABASE = "bakery"
+    MARMOT_READER_USER     = local.marmot_reader_role
+
+    # Dagu hands steps only DAGU_*, DAG_*, LC_* and a short allowlist; this lets the DBT_*, DP_*, DATALAKE_*, MARMOT_* and AWS_* (task role credentials) env reach the steps.
+    DAGU_ENV_PASSTHROUGH_PREFIXES = "DBT_,DP_,DATALAKE_,MARMOT_,AWS_"
   }
 
   ssm_secrets = {
     DBT_PASSWORD       = local.dbt_password_arn
     DP_LOADER_PASSWORD = local.dp_loader_password_arn
+    # Created by hand with the CLI, like the other passwords.
+    MARMOT_ADMIN_PASSWORD  = local.marmot_admin_password_arn
+    MARMOT_READER_PASSWORD = local.marmot_reader_password_arn
     # Created by hand with the CLI, so no value reaches Terraform state.
     DAGU_GITSYNC_AUTH_TOKEN = local.gitsync_token_arn
   }

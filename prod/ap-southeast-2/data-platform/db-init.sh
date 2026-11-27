@@ -25,6 +25,10 @@ GRANT CONNECT ON DATABASE bakery TO dbt;
 GRANT TEMPORARY ON DATABASE bakery TO dbt;
 -- dp_loader gets no other right on the database and none on schema bakery.
 GRANT CONNECT, TEMPORARY ON DATABASE bakery TO dp_loader;
+\getenv rpw MARMOT_READER_PASSWORD
+SELECT 'CREATE ROLE marmot_reader LOGIN' WHERE NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'marmot_reader')\gexec
+SELECT format('ALTER ROLE marmot_reader WITH LOGIN PASSWORD %L', :'rpw')\gexec
+GRANT CONNECT ON DATABASE bakery TO marmot_reader;
 SQL
 
 # The application creates its schema when it starts, which can be after this task.
@@ -47,6 +51,10 @@ SET ROLE commerce;
 GRANT USAGE ON SCHEMA bakery TO dbt;
 GRANT SELECT ON ALL TABLES IN SCHEMA bakery TO dbt;
 ALTER DEFAULT PRIVILEGES FOR ROLE commerce IN SCHEMA bakery GRANT SELECT ON TABLES TO dbt;
+-- marmot_reader gets no other right: nothing on raw, staging, intermediate or marts, and no TEMP.
+GRANT USAGE ON SCHEMA bakery TO marmot_reader;
+GRANT SELECT ON ALL TABLES IN SCHEMA bakery TO marmot_reader;
+ALTER DEFAULT PRIVILEGES FOR ROLE commerce IN SCHEMA bakery GRANT SELECT ON TABLES TO marmot_reader;
 RESET ROLE;
 -- The loader owns schema raw; dbt reads it, now and for tables added later.
 CREATE SCHEMA IF NOT EXISTS raw AUTHORIZATION dp_loader;
@@ -56,4 +64,4 @@ GRANT SELECT ON ALL TABLES IN SCHEMA raw TO dbt;
 ALTER DEFAULT PRIVILEGES FOR ROLE dp_loader IN SCHEMA raw GRANT SELECT ON TABLES TO dbt;
 RESET ROLE;
 SQL
-echo "roles dbt, dp_loader and marmot, database marmot, their schemas and dbt's read access to schemas bakery and raw are ready"
+echo "roles dbt, dp_loader, marmot and marmot_reader, database marmot, their schemas, dbt's read access to schemas bakery and raw and marmot_reader's read access to schema bakery are ready"
