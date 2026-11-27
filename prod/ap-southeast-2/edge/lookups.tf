@@ -18,6 +18,12 @@ data "aws_acm_certificate" "this" {
   most_recent = true
 }
 
+data "aws_acm_certificate" "marmot" {
+  domain      = local.marmot_domain_name
+  statuses    = ["ISSUED"]
+  most_recent = true
+}
+
 data "aws_route53_zone" "this" {
   name         = local.zone_name
   private_zone = false
