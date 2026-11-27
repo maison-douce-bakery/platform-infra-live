@@ -20,10 +20,10 @@ Live AWS infrastructure, one Terraform state per stack, laid out as `<env>/<regi
 Merging to `main` deploys. Nobody applies from a laptop.
 
 1. Create a branch and edit the stack.
-2. Open a PR. CI runs static checks and a read-only `plan` per stack. Read the plan summary.
-3. Merge with rebase. CI applies on `main` through the `prod` environment, which only `main` can use.
+2. Open a PR. CI runs static checks on every stack and a read-only `plan` for the stacks you changed. Read the plan summary.
+3. Merge with rebase. CI applies only the changed stacks on `main` through the `prod` environment, which only `main` can use. A change under `.github/`, to `backend.hcl` or to `.tflint.hcl` counts as a change to every stack.
 
-To check for drift while prod is up, run the workflow manually: the plan fails if live AWS no longer matches `main`.
+To check for drift while prod is up, run the workflow manually: it plans every stack and the plan fails if live AWS no longer matches `main`.
 
 To plan locally with an admin session:
 
