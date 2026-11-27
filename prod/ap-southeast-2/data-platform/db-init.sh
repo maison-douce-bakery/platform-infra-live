@@ -29,6 +29,8 @@ GRANT CONNECT, TEMPORARY ON DATABASE bakery TO dp_loader;
 SELECT 'CREATE ROLE marmot_reader LOGIN' WHERE NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'marmot_reader')\gexec
 SELECT format('ALTER ROLE marmot_reader WITH LOGIN PASSWORD %L', :'rpw')\gexec
 GRANT CONNECT ON DATABASE bakery TO marmot_reader;
+-- The Marmot PostgreSQL plugin calls pg_database_size on every database, which needs CONNECT or this role.
+GRANT pg_read_all_stats TO marmot_reader;
 SQL
 
 # The application creates its schema when it starts, which can be after this task.
@@ -51,7 +53,7 @@ SET ROLE commerce;
 GRANT USAGE ON SCHEMA bakery TO dbt;
 GRANT SELECT ON ALL TABLES IN SCHEMA bakery TO dbt;
 ALTER DEFAULT PRIVILEGES FOR ROLE commerce IN SCHEMA bakery GRANT SELECT ON TABLES TO dbt;
--- marmot_reader gets no other right: nothing on raw, staging, intermediate or marts, and no TEMP.
+-- marmot_reader gets no other table right: nothing on raw, staging, intermediate or marts, and no TEMP.
 GRANT USAGE ON SCHEMA bakery TO marmot_reader;
 GRANT SELECT ON ALL TABLES IN SCHEMA bakery TO marmot_reader;
 ALTER DEFAULT PRIVILEGES FOR ROLE commerce IN SCHEMA bakery GRANT SELECT ON TABLES TO marmot_reader;
