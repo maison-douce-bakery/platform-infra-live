@@ -28,9 +28,9 @@ resource "aws_vpc_security_group_egress_rule" "to_targets" {
   security_group_id = aws_security_group.alb.id
   cidr_ipv4         = data.aws_vpc.this.cidr_block
   ip_protocol       = "tcp"
-  from_port         = local.dagu_port
-  to_port           = local.dagu_port
-  description       = "Dagu targets inside the VPC"
+  from_port         = local.target_port
+  to_port           = local.target_port
+  description       = "Targets inside the VPC"
 }
 
 resource "aws_lb" "this" {
@@ -50,12 +50,26 @@ resource "aws_lb_target_group" "dagu" {
   name                 = "mdb-prod-dagu"
   target_type          = "ip"
   protocol             = "HTTP"
-  port                 = local.dagu_port
+  port                 = local.target_port
   vpc_id               = data.aws_vpc.this.id
   deregistration_delay = 30
 
   health_check {
     path    = "/api/v1/health"
+    matcher = "200"
+  }
+}
+
+resource "aws_lb_target_group" "marmot" {
+  name                 = "mdb-prod-marmot"
+  target_type          = "ip"
+  protocol             = "HTTP"
+  port                 = local.target_port
+  vpc_id               = data.aws_vpc.this.id
+  deregistration_delay = 30
+
+  health_check {
+    path    = "/readyz"
     matcher = "200"
   }
 }
@@ -70,6 +84,27 @@ resource "aws_lb_listener" "https" {
   default_action {
     type             = "forward"
     target_group_arn = aws_lb_target_group.dagu.arn
+  }
+}
+
+resource "aws_lb_listener_certificate" "marmot" {
+  listener_arn    = aws_lb_listener.https.arn
+  certificate_arn = data.aws_acm_certificate.marmot.arn
+}
+
+resource "aws_lb_listener_rule" "marmot" {
+  listener_arn = aws_lb_listener.https.arn
+  priority     = 10
+
+  action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.marmot.arn
+  }
+
+  condition {
+    host_header {
+      values = [local.marmot_domain_name]
+    }
   }
 }
 
@@ -92,6 +127,18 @@ resource "aws_lb_listener" "http" {
 resource "aws_route53_record" "dagu" {
   zone_id = data.aws_route53_zone.this.zone_id
   name    = local.domain_name
+  type    = "A"
+
+  alias {
+    name                   = aws_lb.this.dns_name
+    zone_id                = aws_lb.this.zone_id
+    evaluate_target_health = true
+  }
+}
+
+resource "aws_route53_record" "marmot" {
+  zone_id = data.aws_route53_zone.this.zone_id
+  name    = local.marmot_domain_name
   type    = "A"
 
   alias {
