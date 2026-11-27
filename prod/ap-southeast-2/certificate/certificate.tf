@@ -1,5 +1,7 @@
 resource "aws_acm_certificate" "this" {
-  domain_name       = local.domain_name
+  for_each = local.domain_names
+
+  domain_name       = each.value
   validation_method = "DNS"
 
   lifecycle {
@@ -9,9 +11,11 @@ resource "aws_acm_certificate" "this" {
 }
 
 resource "aws_route53_record" "validation" {
-  for_each = {
-    for o in aws_acm_certificate.this.domain_validation_options : o.domain_name => o
-  }
+  for_each = merge([
+    for cert in aws_acm_certificate.this : {
+      for o in cert.domain_validation_options : o.domain_name => o
+    }
+  ]...)
 
   zone_id         = data.aws_route53_zone.this.zone_id
   name            = each.value.resource_record_name
@@ -22,6 +26,8 @@ resource "aws_route53_record" "validation" {
 }
 
 resource "aws_acm_certificate_validation" "this" {
-  certificate_arn         = aws_acm_certificate.this.arn
-  validation_record_fqdns = [for r in aws_route53_record.validation : r.fqdn]
+  for_each = aws_acm_certificate.this
+
+  certificate_arn         = each.value.arn
+  validation_record_fqdns = [for o in each.value.domain_validation_options : aws_route53_record.validation[o.domain_name].fqdn]
 }

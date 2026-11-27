@@ -60,7 +60,7 @@ module "service" {
   ssm_secrets = {
     DBT_PASSWORD       = local.dbt_password_arn
     DP_LOADER_PASSWORD = local.dp_loader_password_arn
-    # Created by hand with the CLI, so no value reaches Terraform state; it survives teardown.
+    # Created by hand with the CLI, so no value reaches Terraform state.
     DAGU_GITSYNC_AUTH_TOKEN = local.gitsync_token_arn
   }
 

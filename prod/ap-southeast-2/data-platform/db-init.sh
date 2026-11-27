@@ -9,6 +9,13 @@ SELECT format('ALTER ROLE dbt WITH LOGIN PASSWORD %L', :'pw')\gexec
 SELECT 'CREATE ROLE dp_loader LOGIN' WHERE NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'dp_loader')\gexec
 SELECT format('ALTER ROLE dp_loader WITH LOGIN PASSWORD %L', :'lpw')\gexec
 GRANT dp_loader TO CURRENT_USER WITH SET TRUE;
+\getenv mpw MARMOT_PASSWORD
+SELECT 'CREATE ROLE marmot LOGIN' WHERE NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'marmot')\gexec
+SELECT format('ALTER ROLE marmot WITH LOGIN PASSWORD %L', :'mpw')\gexec
+-- PostgreSQL 16+: the creator may only make marmot a database owner after taking SET on it.
+GRANT marmot TO CURRENT_USER WITH SET TRUE;
+SELECT 'CREATE DATABASE marmot OWNER marmot' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'marmot')\gexec
+REVOKE ALL ON DATABASE marmot FROM PUBLIC;
 -- PostgreSQL 16+: the creator may only make dbt a schema owner after taking SET on it.
 GRANT dbt TO CURRENT_USER WITH SET TRUE;
 -- The master reaches database bakery, and acts for commerce in it, through membership of commerce.
@@ -49,4 +56,4 @@ GRANT SELECT ON ALL TABLES IN SCHEMA raw TO dbt;
 ALTER DEFAULT PRIVILEGES FOR ROLE dp_loader IN SCHEMA raw GRANT SELECT ON TABLES TO dbt;
 RESET ROLE;
 SQL
-echo "roles dbt and dp_loader, their schemas and dbt's read access to schemas bakery and raw are ready"
+echo "roles dbt, dp_loader and marmot, database marmot, their schemas and dbt's read access to schemas bakery and raw are ready"
