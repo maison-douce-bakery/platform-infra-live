@@ -13,6 +13,7 @@ Live AWS infrastructure, one Terraform state per stack, laid out as `<env>/<regi
 | `prod/ap-southeast-2/certificate` | ACM certificates for `dagu.datawithme.qd.je` and `marmot.datawithme.qd.je`, validated by DNS in the Route 53 zone `datawithme.qd.je`. Never destroyed |
 | `prod/ap-southeast-2/edge` | Public Application Load Balancer `mdb-prod-edge` (HTTPS on 443, HTTP redirects) with the target groups `mdb-prod-dagu` and `mdb-prod-marmot`, a host rule for `marmot.datawithme.qd.je` and the DNS records `dagu.datawithme.qd.je` and `marmot.datawithme.qd.je`. Needs the `certificate` stack |
 | `prod/ap-southeast-2/data-platform` | Dagu as a Fargate task (public subnet, no inbound, ECS Exec) with its state on an encrypted, backed-up EFS file system, from the `ecs-service` module. DAGs come from `data-orchestration` through Git Sync; the `dbt` and `dp_loader` database users and schema `raw` are created here, their passwords live in SSM Parameter Store (set by hand). The task role can invoke the ingest Lambda and read `raw/open_meteo/` in the datalake bucket. Needs the database `bakery` and the `datalake` stack |
+| `prod/ap-southeast-2/marmot` | Marmot data catalog as a Fargate task (public subnet, reached through the edge stack's ALB, ECS Exec) from the `ecs-service` module, with its state in the database `marmot` on RDS. The database password and encryption key live in SSM Parameter Store (set by hand); the role and database come from `data-platform`. Needs the `edge` and `data-platform` stacks |
 
 ## Making a change
 
