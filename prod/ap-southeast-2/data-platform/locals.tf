@@ -26,11 +26,19 @@ locals {
 
   marmot_ssm_prefix = "/mdb/prod/marmot"
 
+  # The role can only read the application's schema; the Dagu task uses it to register Marmot's PostgreSQL source.
+  marmot_reader_role = "marmot_reader"
+
+  # Bump after changing the marmot reader-password parameter to rerun db-init.
+  marmot_reader_password_version = 1
+
   # Created by hand with the CLI, never read by Terraform.
-  dbt_password_arn       = "arn:aws:ssm:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:parameter${local.ssm_prefix}/dbt-password"
-  dp_loader_password_arn = "arn:aws:ssm:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:parameter${local.ssm_prefix}/dp-loader-password"
-  marmot_password_arn    = "arn:aws:ssm:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:parameter${local.marmot_ssm_prefix}/db-password"
-  gitsync_token_arn      = "arn:aws:ssm:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:parameter${local.ssm_prefix}/gitsync-token"
+  dbt_password_arn           = "arn:aws:ssm:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:parameter${local.ssm_prefix}/dbt-password"
+  dp_loader_password_arn     = "arn:aws:ssm:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:parameter${local.ssm_prefix}/dp-loader-password"
+  marmot_password_arn        = "arn:aws:ssm:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:parameter${local.marmot_ssm_prefix}/db-password"
+  marmot_reader_password_arn = "arn:aws:ssm:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:parameter${local.marmot_ssm_prefix}/reader-password"
+  marmot_admin_password_arn  = "arn:aws:ssm:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:parameter${local.marmot_ssm_prefix}/admin-password"
+  gitsync_token_arn          = "arn:aws:ssm:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:parameter${local.ssm_prefix}/gitsync-token"
 
   # The bucket comes from the datalake stack; the function is deployed by its own repo.
   datalake_bucket_name = "mdb-prod-datalake-${data.aws_caller_identity.current.account_id}-${data.aws_region.current.region}"
