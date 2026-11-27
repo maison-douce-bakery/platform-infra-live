@@ -1,6 +1,6 @@
 name: terraform
 
-# PRs plan, main applies. No scheduled drift check: run it manually to check drift.
+# PRs plan the stacks that changed, main applies them. A manual run plans every stack: that is the drift check.
 on:
   pull_request:
     branches: [main]
@@ -12,18 +12,85 @@ permissions:
   contents: read
 
 jobs:
+  # The one ordered list of stacks (dependency order). Selects the stacks a run touches.
+  changes:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    outputs:
+      all: ${{ steps.select.outputs.all }}
+      changed: ${{ steps.select.outputs.changed }}
+      directories: ${{ steps.select.outputs.directories }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: select stacks
+        id: select
+        env:
+          STACKS: >-
+            ["prod/ap-southeast-2/network", "prod/ap-southeast-2/rds", "prod/ap-southeast-2/ecs", "prod/ap-southeast-2/commerce", "prod/ap-southeast-2/datalake", "prod/ap-southeast-2/ingest-open-meteo", "prod/ap-southeast-2/certificate", "prod/ap-southeast-2/edge", "prod/ap-southeast-2/data-platform", "prod/ap-southeast-2/marmot"]
+          EVENT: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          BEFORE: ${{ github.event.before }}
+        run: |
+          set -euo pipefail
+          all=$(jq -c . <<< "$STACKS")
+          files=""
+          reason=""
+
+          case "$EVENT" in
+            pull_request)
+              files=$(git diff --name-only "$BASE_SHA" HEAD)
+              ;;
+            push)
+              if [[ "$BEFORE" =~ ^0+$ ]] || ! git cat-file -e "$BEFORE^{commit}" 2>/dev/null; then
+                reason="no usable previous commit"
+              else
+                files=$(git diff --name-only "$BEFORE" HEAD)
+              fi
+              ;;
+            *)
+              reason="manual run"
+              ;;
+          esac
+
+          # Shared files affect every stack.
+          if [ -z "$reason" ] && printf '%s\n' "$files" | grep -Eq '^\.github/|(^|/)(backend|\.tflint)\.hcl$'; then
+            reason="shared files changed"
+          fi
+
+          if [ -n "$reason" ]; then
+            changed="$all"
+          else
+            changed=$(jq -c --arg files "$files" '($files | split("\n")) as $f | map(select(. as $s | any($f[]; startswith($s + "/"))))' <<< "$all")
+          fi
+
+          msg="Stacks selected: $(jq -r 'length' <<< "$changed") of $(jq -r 'length' <<< "$all")${reason:+ ($reason)}: $(jq -r 'join(" ")' <<< "$changed")"
+          echo "$msg"
+          echo "$msg" >> "$GITHUB_STEP_SUMMARY"
+          {
+            echo "all=$all"
+            echo "changed=$changed"
+            echo "directories=$(jq -r 'join(" ")' <<< "$all")"
+          } >> "$GITHUB_OUTPUT"
+
   terraform:
+    needs: changes
     uses: maison-douce-bakery/platform-ci-workflows/.github/workflows/terraform-static.yml@6fb526a6f532e08a00fc4131ecad00042e83c690 # terraform-static/v1.0.0
     with:
-      directories: prod/ap-southeast-2/network prod/ap-southeast-2/rds prod/ap-southeast-2/ecs prod/ap-southeast-2/commerce prod/ap-southeast-2/datalake prod/ap-southeast-2/ingest-open-meteo prod/ap-southeast-2/certificate prod/ap-southeast-2/edge prod/ap-southeast-2/data-platform prod/ap-southeast-2/marmot
+      directories: ${{ needs.changes.outputs.directories }}
 
   # Not on push: pending changes would be reported as drift. The apply job plans itself.
   plan:
-    needs: terraform
+    needs: [terraform, changes]
     if: github.event_name != 'push'
-    uses: maison-douce-bakery/platform-ci-workflows/.github/workflows/terraform-plan.yml@14a60ad81ce2b6807c47ecc032dd9deb6c252161 # terraform-plan/v1.0.0
+    uses: maison-douce-bakery/platform-ci-workflows/.github/workflows/terraform-plan.yml@97daa88c12e03323c9d770e1024a163bf9298fee # terraform-plan/v1.1.0
     with:
-      stacks: '["prod/ap-southeast-2/network", "prod/ap-southeast-2/rds", "prod/ap-southeast-2/ecs", "prod/ap-southeast-2/commerce", "prod/ap-southeast-2/datalake", "prod/ap-southeast-2/ingest-open-meteo", "prod/ap-southeast-2/certificate", "prod/ap-southeast-2/edge", "prod/ap-southeast-2/data-platform", "prod/ap-southeast-2/marmot"]'
+      stacks: ${{ needs.changes.outputs.all }}
+      changed_stacks: ${{ needs.changes.outputs.changed }}
       role_arn: ${{ vars.AWS_CI_PLAN_ROLE_ARN }}
       aws_region: ${{ vars.AWS_REGION }}
       backend_config: backend.hcl
@@ -33,8 +100,8 @@ jobs:
 
   apply:
     name: apply (${{ matrix.stack }})
-    needs: terraform
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [terraform, changes]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.changes.outputs.changed != '[]'
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     environment: prod
@@ -46,7 +113,7 @@ jobs:
       max-parallel: 1
       fail-fast: true
       matrix:
-        stack: [prod/ap-southeast-2/network, prod/ap-southeast-2/rds, prod/ap-southeast-2/ecs, prod/ap-southeast-2/commerce, prod/ap-southeast-2/datalake, prod/ap-southeast-2/ingest-open-meteo, prod/ap-southeast-2/certificate, prod/ap-southeast-2/edge, prod/ap-southeast-2/data-platform, prod/ap-southeast-2/marmot]
+        stack: ${{ fromJSON(needs.changes.outputs.changed) }}
     env:
       TF_IN_AUTOMATION: "true"
       TF_INPUT: "false"
