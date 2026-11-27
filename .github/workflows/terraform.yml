@@ -1,8 +1,6 @@
 name: terraform
 
-# PRs plan, main applies. No scheduled drift check: prod is torn down and brought up by hand
-# (teardown.sh / bringup.sh), so a run at a fixed time could hit a torn-down environment.
-# Run it manually to check drift while prod is up.
+# PRs plan, main applies. No scheduled drift check: run it manually to check drift.
 on:
   pull_request:
     branches: [main]
