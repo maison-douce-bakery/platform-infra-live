@@ -5,7 +5,7 @@ locals {
   # The image is the upstream Dagu image plus the data tools, and still runs as uid/gid 1000 (user dagu).
   dagu_uid = 1000
 
-  dagu_image = "452258152479.dkr.ecr.ap-southeast-2.amazonaws.com/mdb/dagu-dbt@sha256:eeaa1fd98a0ada5be6da3494ec4bdaa6be47eff392c3b7cb6ee080b88b1aa0c1"
+  dagu_image = "452258152479.dkr.ecr.ap-southeast-2.amazonaws.com/mdb/dagu-dbt@sha256:00d32c9a9fda33f75485954dd541c597cb1c7e2611a5354a7e3e8dffba0e18a4"
 
   # The role owns the schemas staging, intermediate, marts and snapshots and can only read the application's schema.
   dbt_role = "dbt"
@@ -21,9 +21,18 @@ locals {
   # Bump after changing the dp-loader-password parameter to rerun db-init.
   dp_loader_password_version = 1
 
-  # Created by hand with the CLI, survives teardown, never read by Terraform.
+  # The role owns database marmot, used by the Marmot catalog, and nothing else.
+  marmot_role = "marmot"
+
+  # Bump after changing the marmot db-password parameter to rerun db-init.
+  marmot_password_version = 1
+
+  marmot_ssm_prefix = "/mdb/prod/marmot"
+
+  # Created by hand with the CLI, never read by Terraform.
   dbt_password_arn       = "arn:aws:ssm:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:parameter${local.ssm_prefix}/dbt-password"
   dp_loader_password_arn = "arn:aws:ssm:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:parameter${local.ssm_prefix}/dp-loader-password"
+  marmot_password_arn    = "arn:aws:ssm:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:parameter${local.marmot_ssm_prefix}/db-password"
   gitsync_token_arn      = "arn:aws:ssm:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:parameter${local.ssm_prefix}/gitsync-token"
 
   # The bucket comes from the datalake stack; the function is deployed by its own repo.
