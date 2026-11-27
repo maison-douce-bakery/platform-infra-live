@@ -1,5 +1,5 @@
 module "service" {
-  source = "git::https://github.com/maison-douce-bakery/platform-terraform-modules.git//modules/ecs-service?ref=ecs-service/v0.5.0"
+  source = "git::https://github.com/maison-douce-bakery/platform-terraform-modules.git//modules/ecs-service?ref=ecs-service/v0.6.0"
 
   name                   = local.name
   cluster_name           = data.aws_ecs_cluster.this.cluster_name
@@ -7,14 +7,18 @@ module "service" {
   vpc_id                 = data.aws_vpc.this.id
   subnet_ids             = data.aws_subnets.public.ids
 
-  # No NAT: the task gets a public IPv4 to pull its image and reach AWS. No inbound rule exists.
+  # No NAT: the task gets a public IPv4 to pull its image and reach AWS. Inbound is only the ALB on the container port.
   assign_public_ip = true
 
   image = local.dagu_image
 
-  # No listener: admins reach the UI on localhost:8080 inside the task with SSM port forwarding through ECS Exec.
-  container_port         = null
-  enable_execute_command = true
+  # The Dagu UI is public through the edge stack's ALB, which is the only source allowed on the port.
+  # ECS Exec stays on for SSM port forwarding and shell access.
+  container_port                    = 8080
+  target_group_arn                  = data.aws_lb_target_group.dagu.arn
+  ingress_security_group_ids        = [data.aws_security_group.edge_alb.id]
+  health_check_grace_period_seconds = 60
+  enable_execute_command            = true
 
   # Steps run inside this container for now.
   cpu    = 256
