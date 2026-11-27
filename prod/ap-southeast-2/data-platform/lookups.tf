@@ -37,3 +37,13 @@ data "aws_security_group" "rds" {
 data "aws_s3_bucket" "datalake" {
   bucket = local.datalake_bucket_name
 }
+
+# Created by the edge stack, which is applied first.
+data "aws_lb_target_group" "dagu" {
+  name = "mdb-prod-dagu"
+}
+
+data "aws_security_group" "edge_alb" {
+  name   = "mdb-prod-edge-alb"
+  vpc_id = data.aws_vpc.this.id
+}
