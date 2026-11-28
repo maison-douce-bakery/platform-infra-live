@@ -4,7 +4,11 @@ locals {
   zone_name   = "datawithme.qd.je"
 
   marmot_domain_name = "marmot.datawithme.qd.je"
+  cube_domain_name   = "cube.datawithme.qd.je"
 
   # Dagu and Marmot tasks listen on this port; their security groups belong to their own stacks.
   target_port = 8080
+
+  # Cube serves its REST API on this port.
+  cube_port = 4000
 }

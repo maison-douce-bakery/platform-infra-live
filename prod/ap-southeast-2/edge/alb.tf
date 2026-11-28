@@ -33,6 +33,15 @@ resource "aws_vpc_security_group_egress_rule" "to_targets" {
   description       = "Targets inside the VPC"
 }
 
+resource "aws_vpc_security_group_egress_rule" "to_cube" {
+  security_group_id = aws_security_group.alb.id
+  cidr_ipv4         = data.aws_vpc.this.cidr_block
+  ip_protocol       = "tcp"
+  from_port         = local.cube_port
+  to_port           = local.cube_port
+  description       = "Cube targets inside the VPC"
+}
+
 resource "aws_lb" "this" {
   name                       = local.name
   load_balancer_type         = "application"
@@ -65,6 +74,20 @@ resource "aws_lb_target_group" "marmot" {
   target_type          = "ip"
   protocol             = "HTTP"
   port                 = local.target_port
+  vpc_id               = data.aws_vpc.this.id
+  deregistration_delay = 30
+
+  health_check {
+    path    = "/readyz"
+    matcher = "200"
+  }
+}
+
+resource "aws_lb_target_group" "cube" {
+  name                 = "mdb-prod-cube"
+  target_type          = "ip"
+  protocol             = "HTTP"
+  port                 = local.cube_port
   vpc_id               = data.aws_vpc.this.id
   deregistration_delay = 30
 
@@ -108,6 +131,27 @@ resource "aws_lb_listener_rule" "marmot" {
   }
 }
 
+resource "aws_lb_listener_certificate" "cube" {
+  listener_arn    = aws_lb_listener.https.arn
+  certificate_arn = data.aws_acm_certificate.cube.arn
+}
+
+resource "aws_lb_listener_rule" "cube" {
+  listener_arn = aws_lb_listener.https.arn
+  priority     = 11
+
+  action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.cube.arn
+  }
+
+  condition {
+    host_header {
+      values = [local.cube_domain_name]
+    }
+  }
+}
+
 resource "aws_lb_listener" "http" {
   load_balancer_arn = aws_lb.this.arn
   port              = 80
@@ -139,6 +183,18 @@ resource "aws_route53_record" "dagu" {
 resource "aws_route53_record" "marmot" {
   zone_id = data.aws_route53_zone.this.zone_id
   name    = local.marmot_domain_name
+  type    = "A"
+
+  alias {
+    name                   = aws_lb.this.dns_name
+    zone_id                = aws_lb.this.zone_id
+    evaluate_target_health = true
+  }
+}
+
+resource "aws_route53_record" "cube" {
+  zone_id = data.aws_route53_zone.this.zone_id
+  name    = local.cube_domain_name
   type    = "A"
 
   alias {
