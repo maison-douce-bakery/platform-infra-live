@@ -32,11 +32,17 @@ locals {
   # Bump after changing the marmot reader-password parameter to rerun db-init.
   marmot_reader_password_version = 1
 
+  # Bump after changing the cube db-password parameter to rerun db-init.
+  cube_password_version = 1
+
+  cube_ssm_prefix = "/mdb/prod/cube"
+
   # Created by hand with the CLI, never read by Terraform.
   dbt_password_arn           = "arn:aws:ssm:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:parameter${local.ssm_prefix}/dbt-password"
   dp_loader_password_arn     = "arn:aws:ssm:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:parameter${local.ssm_prefix}/dp-loader-password"
   marmot_password_arn        = "arn:aws:ssm:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:parameter${local.marmot_ssm_prefix}/db-password"
   marmot_reader_password_arn = "arn:aws:ssm:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:parameter${local.marmot_ssm_prefix}/reader-password"
+  cube_password_arn          = "arn:aws:ssm:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:parameter${local.cube_ssm_prefix}/db-password"
   marmot_admin_password_arn  = "arn:aws:ssm:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:parameter${local.marmot_ssm_prefix}/admin-password"
   gitsync_token_arn          = "arn:aws:ssm:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:parameter${local.ssm_prefix}/gitsync-token"
 
