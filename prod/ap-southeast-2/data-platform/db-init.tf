@@ -1,5 +1,6 @@
-# One-off task that creates the roles dbt, dp_loader, marmot and marmot_reader, their schemas, database marmot and the read access
-# of dbt to the application's schema and to raw and of marmot_reader to the application's schema with the RDS master login.
+# One-off task that creates the roles dbt, dp_loader, marmot, marmot_reader and cube_ro, their schemas, database marmot and the read access
+# of dbt to the application's schema and to raw, of marmot_reader to the application's schema and of cube_ro to the application's schema
+# and to marts with the RDS master login.
 resource "aws_cloudwatch_log_group" "db_init" {
   name              = "/ecs/${local.name}-db-init"
   retention_in_days = 30
@@ -36,7 +37,7 @@ resource "aws_iam_role_policy" "db_init_secrets" {
       {
         Effect   = "Allow"
         Action   = "ssm:GetParameters"
-        Resource = [local.dbt_password_arn, local.dp_loader_password_arn, local.marmot_password_arn, local.marmot_reader_password_arn]
+        Resource = [local.dbt_password_arn, local.dp_loader_password_arn, local.marmot_password_arn, local.marmot_reader_password_arn, local.cube_password_arn]
       },
     ]
   })
@@ -70,6 +71,7 @@ resource "aws_ecs_task_definition" "db_init" {
       { name = "DP_LOADER_PASSWORD", valueFrom = local.dp_loader_password_arn },
       { name = "MARMOT_PASSWORD", valueFrom = local.marmot_password_arn },
       { name = "MARMOT_READER_PASSWORD", valueFrom = local.marmot_reader_password_arn },
+      { name = "CUBE_RO_PASSWORD", valueFrom = local.cube_password_arn },
     ]
     logConfiguration = {
       logDriver = "awslogs"
@@ -96,6 +98,7 @@ resource "terraform_data" "db_init" {
     local.dp_loader_password_version,
     local.marmot_password_version,
     local.marmot_reader_password_version,
+    local.cube_password_version,
   ]
 
   provisioner "local-exec" {

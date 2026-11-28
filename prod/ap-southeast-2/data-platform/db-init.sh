@@ -31,6 +31,12 @@ SELECT format('ALTER ROLE marmot_reader WITH LOGIN PASSWORD %L', :'rpw')\gexec
 GRANT CONNECT ON DATABASE bakery TO marmot_reader;
 -- The Marmot PostgreSQL plugin calls pg_database_size on every database, which needs CONNECT or this role.
 GRANT pg_read_all_stats TO marmot_reader;
+-- Cube's login: a connection cap and a statement timeout protect the database from heavy or runaway queries.
+\getenv cpw CUBE_RO_PASSWORD
+SELECT 'CREATE ROLE cube_ro LOGIN' WHERE NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'cube_ro')\gexec
+SELECT format('ALTER ROLE cube_ro WITH LOGIN CONNECTION LIMIT 20 PASSWORD %L', :'cpw')\gexec
+ALTER ROLE cube_ro SET statement_timeout = '30s';
+GRANT CONNECT ON DATABASE bakery TO cube_ro;
 SQL
 
 # The application creates its schema when it starts, which can be after this task.
@@ -57,6 +63,16 @@ ALTER DEFAULT PRIVILEGES FOR ROLE commerce IN SCHEMA bakery GRANT SELECT ON TABL
 GRANT USAGE ON SCHEMA bakery TO marmot_reader;
 GRANT SELECT ON ALL TABLES IN SCHEMA bakery TO marmot_reader;
 ALTER DEFAULT PRIVILEGES FOR ROLE commerce IN SCHEMA bakery GRANT SELECT ON TABLES TO marmot_reader;
+-- cube_ro reads the application's schema, now and for tables added later.
+GRANT USAGE ON SCHEMA bakery TO cube_ro;
+GRANT SELECT ON ALL TABLES IN SCHEMA bakery TO cube_ro;
+ALTER DEFAULT PRIVILEGES FOR ROLE commerce IN SCHEMA bakery GRANT SELECT ON TABLES TO cube_ro;
+RESET ROLE;
+-- dbt rebuilds its tables, so cube_ro gets the default privilege on schema marts instead of grants on each table.
+SET ROLE dbt;
+GRANT USAGE ON SCHEMA marts TO cube_ro;
+GRANT SELECT ON ALL TABLES IN SCHEMA marts TO cube_ro;
+ALTER DEFAULT PRIVILEGES FOR ROLE dbt IN SCHEMA marts GRANT SELECT ON TABLES TO cube_ro;
 RESET ROLE;
 -- The loader owns schema raw; dbt reads it, now and for tables added later.
 CREATE SCHEMA IF NOT EXISTS raw AUTHORIZATION dp_loader;
@@ -66,4 +82,4 @@ GRANT SELECT ON ALL TABLES IN SCHEMA raw TO dbt;
 ALTER DEFAULT PRIVILEGES FOR ROLE dp_loader IN SCHEMA raw GRANT SELECT ON TABLES TO dbt;
 RESET ROLE;
 SQL
-echo "roles dbt, dp_loader, marmot and marmot_reader, database marmot, their schemas, dbt's read access to schemas bakery and raw and marmot_reader's read access to schema bakery are ready"
+echo "roles dbt, dp_loader, marmot, marmot_reader and cube_ro, database marmot, their schemas, dbt's read access to schemas bakery and raw, marmot_reader's read access to schema bakery and cube_ro's read access to schemas bakery and marts are ready"
