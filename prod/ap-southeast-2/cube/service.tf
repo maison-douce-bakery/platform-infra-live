@@ -12,13 +12,10 @@ module "service" {
 
   image = local.cube_image
 
-  # The REST API is public through the edge stack's ALB, which is the only source allowed on the port. Requests need a JWT.
+  # No load balancer: callers inside the VPC are allowed on the port by their own security groups.
   # ECS Exec stays on for SSM port forwarding and shell access.
-  container_port                    = 4000
-  target_group_arn                  = data.aws_lb_target_group.cube.arn
-  ingress_security_group_ids        = [data.aws_security_group.edge_alb.id]
-  health_check_grace_period_seconds = 120
-  enable_execute_command            = true
+  container_port         = 4000
+  enable_execute_command = true
 
   cpu    = 512
   memory = 2048
@@ -31,7 +28,7 @@ module "service" {
     CUBEJS_DB_USER = "cube_ro"
     # RDS requires TLS; like sslmode=require elsewhere, Cube does not verify the certificate by default.
     CUBEJS_DB_SSL = "true"
-    # Production mode: the REST API requires a JWT signed with CUBEJS_API_SECRET.
+    # Production mode: the API requires a JWT signed with CUBEJS_API_SECRET.
     CUBEJS_DEV_MODE = "false"
     # No Cube Store yet: the default in production is the Cube Store driver.
     CUBEJS_CACHE_AND_QUEUE_DRIVER = "memory"
