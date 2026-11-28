@@ -5,7 +5,7 @@ locals {
   # The image is the upstream Dagu image plus the data tools, and still runs as uid/gid 1000 (user dagu).
   dagu_uid = 1000
 
-  dagu_image = "452258152479.dkr.ecr.ap-southeast-2.amazonaws.com/mdb/dagu-dbt@sha256:00d32c9a9fda33f75485954dd541c597cb1c7e2611a5354a7e3e8dffba0e18a4"
+  dagu_image = "452258152479.dkr.ecr.ap-southeast-2.amazonaws.com/mdb/dagu-dbt@sha256:5843d84dfd3179aa9a1980100d1789448130edfa4ee5c25a41d906d19751408a"
 
   # The role owns the schemas staging, intermediate, marts and snapshots and can only read the application's schema.
   dbt_role = "dbt"
